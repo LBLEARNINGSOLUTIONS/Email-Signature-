@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>State Farm Email Signature Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Source+Sans+3:wght@300;400;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: #f4f4f0;
+    display: flex; flex-direction: column; align-items: center;
+    margin: 0; padding: 30px 16px 60px;
+  }
+  h2 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin-bottom: 4px; font-size: 1.4rem; }
+  .subtitle { font-size: 0.78rem; color: #888; margin-bottom: 28px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* preview wrapper just for the page */
+  .preview-shell {
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    max-width: 560px; width: 100%;
+    padding: 4px;
+  }
+
+  /* editor */
+  .editor-panel, .install-box {
+    background: #fff; border: 1px solid #e4e4e4;
+    padding: 24px; max-width: 560px; width: 100%; margin-top: 20px;
+  }
+  .editor-panel h3, .install-box h3 {
+    font-family: 'Playfair Display', serif; font-size: 1rem; margin: 0 0 14px; color: #1a1a1a;
+  }
+  .section-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: #CC0000; font-weight: 600; margin: 18px 0 8px;
+    border-bottom: 1px solid #f0f0f0; padding-bottom: 4px;
+  }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-group.full { grid-column: 1 / -1; }
+  .field-group label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #aaa; font-weight: 600; }
+  .field-group input[type="text"] {
+    font-family: 'Source Sans 3', sans-serif; font-size: 0.82rem;
+    border: 1px solid #ddd; padding: 7px 10px; color: #1a1a1a;
+    outline: none; transition: border-color 0.15s; width: 100%;
+  }
+  .field-group input[type="text"]:focus { border-color: #CC0000; }
+
+  .optional-links { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .opt-row { display: grid; grid-template-columns: 155px 1fr; align-items: center; gap: 10px; }
+  .opt-row input[type="text"] {
+    font-family: 'Source Sans 3', sans-serif; font-size: 0.82rem;
+    border: 1px solid #ddd; padding: 6px 10px; color: #1a1a1a;
+    outline: none; transition: border-color 0.15s, opacity 0.15s; width: 100%;
+  }
+  .opt-row input[type="text"]:focus { border-color: #CC0000; }
+  .opt-row input[type="text"]:disabled { opacity: 0.35; background: #fafafa; }
+  .check-label { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: #555; cursor: pointer; white-space: nowrap; }
+  .check-label input[type="checkbox"] { accent-color: #CC0000; width: 15px; height: 15px; cursor: pointer; }
+
+  .photo-upload-btn {
+    display: inline-block; background: #CC0000; color: white;
+    font-size: 0.73rem; font-family: 'Source Sans 3', sans-serif;
+    font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 8px 16px; cursor: pointer; border: none; transition: background 0.15s; margin-top: 4px;
+  }
+  .photo-upload-btn:hover { background: #aa0000; }
+  #photoInput { display: none; }
+
+  .copy-btn {
+    width: 100%; background: #1a1a1a; color: white;
+    font-family: 'Source Sans 3', sans-serif; font-size: 0.8rem;
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 12px; border: none; cursor: pointer; margin-top: 20px; transition: background 0.15s;
+  }
+  .copy-btn:hover { background: #333; }
+
+  .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 16px; }
+  .tab {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 8px 14px; cursor: pointer; color: #aaa;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s;
+  }
+  .tab.active { color: #CC0000; border-bottom-color: #CC0000; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .steps li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.82rem; color: #444; line-height: 1.5; }
+  .step-num {
+    flex-shrink: 0; width: 22px; height: 22px; background: #CC0000; color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 700;
+  }
+  .tip-box { background: #fff8f8; border-left: 3px solid #CC0000; padding: 10px 14px; font-size: 0.75rem; color: #666; margin-top: 14px; line-height: 1.6; }
+
+  /* photo placeholder circle in preview (not copied) */
+  .photo-placeholder {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: #e8e8e8; border: 2px solid #CC0000;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; color: #aaa; text-align: center; line-height: 1.3;
+    cursor: pointer; overflow: hidden; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<h2>Jay Carnahan Agency</h2>
+<p class="subtitle">Email Signature Builder &nbsp;·&nbsp; State Farm</p>
+
+<!-- PREVIEW SHELL (table-based so copy/paste works in email) -->
+<div class="preview-shell">
+  <!-- This is the actual signature that gets copied -->
+  <div id="sigBlock">
+    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; font-family:Arial,sans-serif; border-left:4px solid #CC0000; background:#ffffff; max-width:560px;">
+      <tr>
+        <!-- Photo cell -->
+        <td valign="top" style="padding:18px 16px 18px 16px; width:96px;">
+          <div id="photoWrap" onclick="document.getElementById('photoInput').click()" style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:2px solid #CC0000;background:#e8e8e8;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            <img id="photoPreview" src="" alt="" width="80" height="80" style="display:none;width:80px;height:80px;object-fit:cover;border-radius:50%;">
+            <span id="uploadHint" style="font-size:10px;color:#aaa;text-align:center;line-height:1.4;padding:4px;pointer-events:none;">Click to<br>add photo</span>
+          </div>
+        </td>
+        <!-- Content cell -->
+        <td valign="top" style="padding:18px 20px 18px 0;">
+          <p id="dispName" style="margin:0 0 2px 0; font-family:Georgia,serif; font-size:17px; font-weight:bold; color:#1a1a1a; line-height:1.2;">Jane Smith</p>
+          <p id="dispTitle" style="margin:0 0 10px 0; font-family:Arial,sans-serif; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; color:#CC0000;">Insurance Agent</p>
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin-bottom:6px;">
+            <tr><td style="height:1px;width:36px;background:#e0e0e0;padding:0;font-size:0;">&nbsp;</td></tr>
+          </table>
+          <table cellpadding="0" cellspacing="2" border="0" style="border-collapse:collapse; font-family:Arial,sans-serif; font-size:12px; color:#555555; line-height:1.7;">
+            <tr><td style="padding:1px 0;"><span style="opacity:0.4;">📞</span>&nbsp;<span id="dispPhone">(801) 555-0100</span></td></tr>
+            <tr><td style="padding:1px 0;"><span style="opacity:0.4;">✉</span>&nbsp;<a id="dispEmail" href="mailto:jane@agentjay.com" style="color:#CC0000;text-decoration:none;">jane@agentjay.com</a></td></tr>
+            <tr><td style="padding:1px 0;"><span style="opacity:0.4;">📍</span>&nbsp;<span id="dispAddress">2572 E South Weber Dr Suite 2, South Weber, UT 84405</span></td></tr>
+            <tr><td style="padding:1px 0;"><span style="opacity:0.4;">🔗</span>&nbsp;<a id="dispWebsite" href="https://agentjay.com" style="color:#CC0000;text-decoration:none;">https://agentjay.com</a></td></tr>
+            <tr id="rowReferral" style="display:none;"><td style="padding:1px 0;"><span style="opacity:0.4;">🎁</span>&nbsp;<a id="dispReferral" href="#" style="color:#CC0000;text-decoration:none;">Refer a Friend &amp; Save →</a></td></tr>
+            <tr id="rowReview" style="display:none;"><td style="padding:1px 0;"><span style="opacity:0.4;">⭐</span>&nbsp;<a id="dispReview" href="#" style="color:#CC0000;text-decoration:none;">Leave Us a Google Review →</a></td></tr>
+          </table>
+          <!-- Footer bar -->
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin-top:10px; padding-top:10px; border-top:1px solid #f0f0f0; width:100%;">
+            <tr>
+              <td valign="middle" style="padding-top:8px;">
+                <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td valign="middle" style="padding-right:6px;">
+                      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-radius:50%;overflow:hidden;background:#CC0000;width:22px;height:22px;">
+                        <tr><td align="center" valign="middle" style="width:22px;height:22px;background:#CC0000;border-radius:50%;">
+                          <span style="color:white;font-size:11px;font-weight:bold;line-height:1;">SF</span>
+                        </td></tr>
+                      </table>
+                    </td>
+                    <td valign="middle" style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#1a1a1a;padding-right:10px;">State Farm</td>
+                    <td valign="middle" style="font-family:Arial,sans-serif;font-size:10px;color:#bbb;font-style:italic;">Like a good neighbor, State Farm is there.®</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- EDITOR -->
+<div class="editor-panel">
+  <h3>Customize Your Signature</h3>
+
+  <div class="section-label">Your Info</div>
+  <div class="field-grid">
+    <div class="field-group"><label>Full Name</label><input type="text" id="inName" value="Jane Smith" oninput="update()"></div>
+    <div class="field-group"><label>Title</label><input type="text" id="inTitle" value="Insurance Agent" oninput="update()"></div>
+    <div class="field-group"><label>Phone</label><input type="text" id="inPhone" value="(801) 555-0100" oninput="update()"></div>
+    <div class="field-group"><label>Email</label><input type="text" id="inEmail" value="jane@agentjay.com" oninput="update()"></div>
+    <div class="field-group full"><label>Address</label><input type="text" id="inAddress" value="2572 E South Weber Dr Suite 2, South Weber, UT 84405" oninput="update()"></div>
+    <div class="field-group full"><label>Website</label><input type="text" id="inWebsite" value="https://agentjay.com" oninput="update()"></div>
+  </div>
+
+  <div class="section-label">Photo</div>
+  <button class="photo-upload-btn" onclick="document.getElementById('photoInput').click()">⬆ Upload Your Photo</button>
+  <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(event)">
+
+  <div class="section-label">Optional Links — Check to Include</div>
+  <div class="optional-links">
+    <div class="opt-row">
+      <label class="check-label"><input type="checkbox" id="chkReferral" onchange="toggleOpt('Referral')"> 🎁 Referral Link</label>
+      <input type="text" id="inReferral" placeholder="https://agentjay.com/refer" oninput="update()" disabled>
+    </div>
+    <div class="opt-row">
+      <label class="check-label"><input type="checkbox" id="chkReview" onchange="toggleOpt('Review')"> ⭐ Google Review</label>
+      <input type="text" id="inReview" placeholder="https://g.page/r/your-link" oninput="update()" disabled>
+    </div>
+  </div>
+
+  <button class="copy-btn" onclick="copySignature()">Copy Signature to Clipboard</button>
+</div>
+
+<!-- INSTALL GUIDE -->
+<div class="install-box">
+  <h3>How to Add This to Your Email</h3>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('gmail', this)">Gmail</div>
+    <div class="tab" onclick="showTab('outlook', this)">Outlook</div>
+    <div class="tab" onclick="showTab('apple', this)">Apple Mail</div>
+  </div>
+
+  <div class="tab-content active" id="tab-gmail">
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>Fill in your info above and click <strong>Copy Signature to Clipboard</strong>.</span></li>
+      <li><span class="step-num">2</span><span>In Gmail, click the <strong>gear icon ⚙</strong> (top right) → <strong>See all settings</strong>.</span></li>
+      <li><span class="step-num">3</span><span>On the <strong>General</strong> tab, scroll to <strong>Signature</strong> → click <strong>Create new</strong> and name it.</span></li>
+      <li><span class="step-num">4</span><span>Click inside the signature box and press <strong>Ctrl+V</strong> (PC) or <strong>⌘+V</strong> (Mac) to paste.</span></li>
+      <li><span class="step-num">5</span><span>Scroll down and click <strong>Save Changes</strong>.</span></li>
+    </ol>
+    <div class="tip-box">⚠️ <strong>Photo tip:</strong> If your photo doesn't appear after pasting, click the image icon 🖼 in Gmail's signature toolbar and re-upload your headshot directly there.</div>
+  </div>
+
+  <div class="tab-content" id="tab-outlook">
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>Fill in your info above and click <strong>Copy Signature to Clipboard</strong>.</span></li>
+      <li><span class="step-num">2</span><span>Open Outlook → <strong>File → Options → Mail → Signatures</strong>.</span></li>
+      <li><span class="step-num">3</span><span>Click <strong>New</strong>, name it, then click inside the editing box.</span></li>
+      <li><span class="step-num">4</span><span>Press <strong>Ctrl+V</strong> to paste your signature.</span></li>
+      <li><span class="step-num">5</span><span>Set as default for <strong>New messages</strong> and/or <strong>Replies</strong>. Click <strong>OK</strong>.</span></li>
+    </ol>
+    <div class="tip-box">💡 Outlook on the web (office.com): go to <strong>Settings → Compose and reply → Email signature</strong>.</div>
+  </div>
+
+  <div class="tab-content" id="tab-apple">
+    <ol class="steps">
+      <li><span class="step-num">1</span><span>Fill in your info above and click <strong>Copy Signature to Clipboard</strong>.</span></li>
+      <li><span class="step-num">2</span><span>Open <strong>Mail</strong> on your Mac → <strong>Mail → Settings → Signatures</strong>.</span></li>
+      <li><span class="step-num">3</span><span>Select your email account, click <strong>+</strong> to create a new signature.</span></li>
+      <li><span class="step-num">4</span><span>Click inside the preview area, press <strong>⌘+A</strong>, then <strong>⌘+V</strong> to paste.</span></li>
+      <li><span class="step-num">5</span><span>Close Settings — your signature is ready.</span></li>
+    </ol>
+    <div class="tip-box">💡 Uncheck <strong>"Always match my default message font"</strong> so the signature keeps its formatting.</div>
+  </div>
+</div>
+
+<script>
+  function toggleOpt(name) {
+    const cb = document.getElementById('chk' + name);
+    document.getElementById('in' + name).disabled = !cb.checked;
+    update();
+  }
+
+  function update() {
+    document.getElementById('dispName').textContent = document.getElementById('inName').value || 'Jane Smith';
+    document.getElementById('dispTitle').textContent = document.getElementById('inTitle').value || 'Insurance Agent';
+    document.getElementById('dispPhone').textContent = document.getElementById('inPhone').value;
+
+    const email = document.getElementById('inEmail').value;
+    document.getElementById('dispEmail').textContent = email;
+    document.getElementById('dispEmail').href = 'mailto:' + email;
+
+    document.getElementById('dispAddress').textContent = document.getElementById('inAddress').value;
+
+    const web = document.getElementById('inWebsite').value;
+    document.getElementById('dispWebsite').textContent = web;
+    document.getElementById('dispWebsite').href = web;
+
+    const showRef = document.getElementById('chkReferral').checked;
+    document.getElementById('rowReferral').style.display = showRef ? '' : 'none';
+    if (showRef) document.getElementById('dispReferral').href = document.getElementById('inReferral').value;
+
+    const showRev = document.getElementById('chkReview').checked;
+    document.getElementById('rowReview').style.display = showRev ? '' : 'none';
+    if (showRev) document.getElementById('dispReview').href = document.getElementById('inReview').value;
+  }
+
+  function handlePhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = document.getElementById('photoPreview');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      document.getElementById('uploadHint').style.display = 'none';
+      // Also update the img style for the table layout
+      img.style.borderRadius = '50%';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function showTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function copySignature() {
+    const sig = document.getElementById('sigBlock');
+    const range = document.createRange();
+    range.selectNode(sig);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied! Now paste into your email app.';
+    setTimeout(() => btn.textContent = 'Copy Signature to Clipboard', 3000);
+  }
+</script>
+</body>
+</html>
